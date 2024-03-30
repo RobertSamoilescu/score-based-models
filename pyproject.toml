@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "score_models"
+version = "0.0.1"
+authors = [
+  { name="Robert Samoilescu", email="robert.samoilescu@gmail.com" },
+]
+description = "Simple score based models repo."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "torch==2.0.0",
+    "numpy",
+    "matplotlib",
+    "tqdm",
+]
+
+
+[project.optional-dependencies]
+dev = [
+    "black>=23.3.0",
+    "mypy>=1.0",
+    "ruff>=0.0.261",
+    "isort>=5.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/RobertSamoilescu/score_models"
+Issues = "https://github.com/RobertSamoilescu/score_models/issues"
+
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+ignore_missing_imports = true
+show_error_codes = true
+
+[tool.ruff]
+line-length = 120
+select = [
+    "E", # pycodestyle
+    "F", # pyflakes
+    "I", # isort
+]
+
+[tool.black]
+line-length = 120
