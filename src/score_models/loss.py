@@ -22,5 +22,7 @@ class DenoisingScoreMatching(nn.Module):
         :param score: Score tensor
         :return: denoising score matching loss
         """
-        dim = tuple(range(1, len(x.shape)))
-        return 0.5 * torch.mean(torch.norm(self.sigma * score + (x_tilde - x) / self.sigma, dim=dim) ** 2)
+        x = x.view(x.size(0), -1)
+        x_tilde = x_tilde.view(x_tilde.size(0), -1)
+        score = score.view(score.size(0), -1)
+        return 0.5 * torch.mean(torch.norm(self.sigma * score + (x_tilde - x) / self.sigma, dim=-1) ** 2)

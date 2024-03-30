@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-
+from tqdm import tqdm
 from score_models.train_steps import TrainStep
 
 
@@ -10,8 +10,9 @@ def trainer(
     model: nn.Module,
     train_loader: DataLoader,
     optimizer: optim.Optimizer,
-    num_epochs: int = 100,
+    num_steps: int = 100,
     device: str = "cuda",
+    log_every: int = 100,
 ) -> nn.Module:
     """Trains the model using the train_step function.
 
@@ -22,18 +23,23 @@ def trainer(
     :param criterion: Loss function
     :param num_epochs: Number of epochs
     """
-    for epoch in range(num_epochs):
-        model.train()
+    model.train()
+    generator = iter(train_loader)
 
-        for i, x in enumerate(train_loader):
-            loss = train_step(x.to(device))
+    for step in tqdm(range(num_steps)):
+        try:
+            x = next(generator)
+        except StopIteration:
+            generator = iter(train_loader)
+            x = next(generator)
 
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
+        loss = train_step(x.to(device))
 
-            step = epoch * len(train_loader) + i
-            if step % 100 == 0:
-                print(f"Step {step}, Loss: {loss.item():.4f}")
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        if step % log_every == 0:
+            print(f"Step {step}, Loss: {loss.item():.4f}")
 
     return model

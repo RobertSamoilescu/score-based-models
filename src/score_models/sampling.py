@@ -20,14 +20,14 @@ def annealed_langevin_dynamics(
     score_model.eval()
     r1, r2 = -8, 8
 
-    x = (r2 - r1) * torch.rand((1, *input_size)).cuda() + r1
+    x = (r2 - r1) * torch.rand(input_size).cuda() + r1
     L = len(sigmas)
 
     for i in range(L):
         alpha_i = eps * sigmas[i] / sigmas[L - 1]
 
         for _ in range(T):
-            z_t = torch.randn((1, *input_size)).cuda()
+            z_t = torch.randn(input_size).cuda()
             x = x + 0.5 * alpha_i * score_model(x, i) + np.sqrt(alpha_i) * z_t
 
     return x
