@@ -7,7 +7,12 @@ import torch.nn as nn
 
 @torch.no_grad()
 def annealed_langevin_dynamics(
-    score_model: nn.Module, input_size: Tuple[int, ...], sigmas: List[float], eps: float = 0.1, T: int = 100
+    score_model: nn.Module,
+    input_size: Tuple[int, ...],
+    sigmas: List[float],
+    eps: float = 0.1,
+    T: int = 100,
+    r: Tuple[float, float] = (-1.0, 1.0),
 ) -> torch.Tensor:
     """Annealed Langevin Dynamics sampling.
 
@@ -15,10 +20,11 @@ def annealed_langevin_dynamics(
     :param sigmas: List of sigmas
     :param eps: Step size
     :param T: Number of steps
+    :param r: Range of the input
     :return: Sampled tensor
     """
     score_model.eval()
-    r1, r2 = -8, 8
+    r1, r2 = r
 
     x = (r2 - r1) * torch.rand(input_size).cuda() + r1
     L = len(sigmas)
