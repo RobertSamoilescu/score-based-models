@@ -53,7 +53,7 @@ def trainer(
     model.train()
     generator = iter(train_loader)
 
-    for step in tqdm(range(num_steps)):
+    for step in tqdm(range(1, num_steps + 1)):
         try:
             x = next(generator)
         except StopIteration:

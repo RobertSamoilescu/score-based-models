@@ -25,4 +25,5 @@ class DenoisingScoreMatching(nn.Module):
         x = x.view(x.size(0), -1)
         x_tilde = x_tilde.view(x_tilde.size(0), -1)
         score = score.view(score.size(0), -1)
-        return torch.mean((self.sigma * score + (x_tilde - x) / self.sigma) ** 2)
+        loss = torch.sum((self.sigma * score + (x_tilde - x) / self.sigma) ** 2, dim=-1)
+        return torch.mean(loss, dim=0)
