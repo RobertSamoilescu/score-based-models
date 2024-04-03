@@ -53,10 +53,11 @@ def _tensor_func(score_model: nn.Module, i: int, x: np.ndarray, y: np.ndarray) -
     x_pt = torch.from_numpy(x).reshape(-1, 1).float()
     y_pt = torch.from_numpy(y).reshape(-1, 1).float()
     X = torch.cat((x_pt, y_pt), dim=-1).to("cuda")
+    indices = i * torch.ones((X.shape[0], ), dtype=torch.long).to("cuda")
 
     score_model.eval()
     with torch.no_grad():
-        Psi = score_model(X, i) if i is not None else score_model(X)
+        Psi = score_model(X, indices) if i is not None else score_model(X)
 
     df_dx = Psi[:, 0].cpu().numpy().reshape(shape)
     df_dy = Psi[:, 1].cpu().numpy().reshape(shape)

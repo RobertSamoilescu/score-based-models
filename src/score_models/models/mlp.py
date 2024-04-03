@@ -2,27 +2,31 @@ import torch
 import torch.nn as nn
 
 
-class ConditionalBatchNorm1d(nn.Module):
-    """Conditional Batch Normalization 1d Layer."""
-
-    def __init__(self, L: int, num_features: int) -> None:
-        """Constructor of the Conditional Batch Normalization 1d Layer.
-
-        :param L: Number of batch normalization layers
-        :param num_features: Number of features in the input tensor
-        """
+class MLPBlock(nn.Module):
+    def __init__(self, input_size: int, output_size: int, t_size: int):
         super().__init__()
-        self.L = L
-        self.num_features = num_features
-        self.bn = nn.ModuleList([nn.BatchNorm1d(self.num_features) for _ in range(self.L)])
+        self.block1 = nn.Sequential(
+            nn.BatchNorm1d(input_size),
+            nn.ReLU(),
+            nn.Linear(input_size, output_size)
+        )
 
-    def forward(self, x: torch.Tensor, i: int) -> torch.Tensor:
-        """Forward pass of the Conditional Batch Normalization 1d Layer.
-        Passes the input tensor through the i-th batch normalization layer.
+        self.block2 = nn.Sequential(
+            nn.BatchNorm1d(output_size),
+            nn.ReLU(),
+            nn.Linear(output_size, output_size)
+        )
 
-        :return: Output tensor
-        """
-        return self.bn[i](x)
+        self.temp_proj = nn.Sequential(
+            nn.BatchNorm1d(t_size),
+            nn.ReLU(),
+            nn.Linear(t_size, output_size)
+        )
+
+    def forward(self, x, temb):
+        x = self.block1(x)
+        x += self.temp_proj(temb)
+        return self.block2(x)
 
 
 class MLPScoreModel(nn.Module):
@@ -39,15 +43,23 @@ class MLPScoreModel(nn.Module):
         self.input_size = input_size
         self.L = L
 
-        self.fc1 = nn.Linear(input_size, hidden_size)
-        self.relu1 = nn.ReLU()
-        self.bn1 = ConditionalBatchNorm1d(L, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.relu2 = nn.ReLU()
-        self.bn2 = ConditionalBatchNorm1d(L, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, input_size)
+        self.time_embed = nn.Sequential(
+            nn.Embedding(num_embeddings=self.L, embedding_dim=input_size),
+            nn.Linear(input_size, hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size)
+        )
 
-    def forward(self, x: torch.Tensor, i: int) -> torch.Tensor:
+        self.head = nn.Linear(input_size, hidden_size)
+        self.block1 = MLPBlock(hidden_size, hidden_size, hidden_size)
+        self.block2 = MLPBlock(hidden_size, hidden_size, hidden_size)
+        self.tail = nn.Sequential(
+            nn.BatchNorm1d(hidden_size),
+            nn.ReLU(),
+            nn.Linear(hidden_size, input_size)
+        )
+
+    def forward(self, x: torch.Tensor, i: torch.Tensor) -> torch.Tensor:
         """Forward pass of the MLP Score Model. Computes the
         forward pass of the model through the i-th batch
         normalization layers.
@@ -56,6 +68,8 @@ class MLPScoreModel(nn.Module):
         :param i: Index of the batch normalization layer
         :return: Output tensor
         """
-        x = self.bn1(self.relu1(self.fc1(x)), i)
-        x = self.bn2(self.relu2(self.fc2(x)), i)
-        return self.fc3(x)
+        temb = self.time_embed(i)
+        x = self.head(x)
+        x = self.block1(x, temb)
+        x = self.block2(x, temb)
+        return self.tail(x)

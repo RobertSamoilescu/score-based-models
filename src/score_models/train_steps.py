@@ -24,10 +24,10 @@ class TrainStepDenoisingScoreMatching(TrainStep):
         :param sigmas: List of sigmas
         """
         self.score_model = score_model
-        self.sigmas = sigmas
+        self.sigmas = torch.tensor(sigmas)
 
         # define loss functions
-        self.loss_fns = [DenoisingScoreMatching(sigma) for sigma in sigmas]
+        self.loss_fn = DenoisingScoreMatching()
 
     def __call__(self, x: Tensor) -> Tensor:
         """Computes the loss for the Denoising Score Matching.
@@ -35,11 +35,22 @@ class TrainStepDenoisingScoreMatching(TrainStep):
         :param x: batch of input tensors
         :return: loss
         """
-        loss = torch.tensor(0.0, device=x.device)
 
-        for i, sigma in enumerate(self.sigmas):
-            x_tilde = x + sigma * torch.randn_like(x)
-            score = self.score_model(x_tilde, i)
-            loss += self.loss_fns[i](x, x_tilde, score)
+        # sample sigmas
+        batch_size = x.shape[0]
+        indices = torch.randint(0, len(self.sigmas), (batch_size, ))
+        sigmas = self.sigmas[indices]
 
-        return loss / len(self.sigmas)
+        # send tensors to device
+        indices = indices.to(x.device)
+        sigmas = sigmas.to(x.device)
+
+        # reshape sigmas to match x
+        sigmas = sigmas.reshape(-1, *(1, ) * (len(x.shape) - 1))
+
+        # construct noisy example and compute score
+        eps = sigmas * torch.randn_like(x)
+        score = self.score_model(x + eps, indices)
+        
+        # compute and return loss
+        return self.loss_fn(eps=eps, score=score, sigmas=sigmas)
