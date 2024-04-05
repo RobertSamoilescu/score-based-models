@@ -1,9 +1,10 @@
-from typing import Callable, Optional, Tuple
+from typing import Callable, List, Optional, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
+import torchvision.transforms.functional as F
 from torch import Tensor
 
 
@@ -92,3 +93,19 @@ def plot_gradient_field(
 
     plt.title("Gradient Field")
     plt.show()
+
+
+def show_torch_images(imgs: Union[torch.Tensor, List[torch.Tensor]]) -> None:
+    """Display a list of images.
+
+    :param imgs: list of images
+    """
+    if not isinstance(imgs, list):
+        imgs = [imgs]
+
+    _, axs = plt.subplots(ncols=len(imgs), squeeze=False)
+    for i, img in enumerate(imgs):
+        img = img.detach()
+        img = F.to_pil_image(img)
+        axs[0, i].imshow(np.asarray(img))
+        axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
