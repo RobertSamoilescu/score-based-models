@@ -21,12 +21,14 @@ The supported methods are:
 #### NCSN
 * 2D gaussian example: `notebooks/ncsn_2d_example.ipynb`
 
-* CIFAR 10: 
+* CIFAR-10: 
 
 ```shell
 cd scripts
 python ncsn_train_cifar10.py
 ```
+
+You can visualise the CIFAR-10 samples in `notebooks/ncsn_cifa-10.ipynb`.
 
 ## Results
 
@@ -40,4 +42,4 @@ python ncsn_train_cifar10.py
 
 * CIFAR-10
 
-<img src="imgs/ncsn-cifar10.png" alt="Gradient field" style="width: 50%;">
+<img src="imgs/ncsn-cifar-10.png" alt="Gradient field" style="width: 50%;">
