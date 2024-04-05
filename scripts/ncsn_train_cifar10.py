@@ -58,12 +58,12 @@ def train(args: argparse.Namespace) -> None:
     train_step = TrainStepNCSN(score_model=score_model, sigmas=sigmas)
 
     # run training loop
-    score_model = trainer(
+    score_model = trainer(  # type: ignore[assignment]
         train_step=train_step,
         model=score_model,
         train_loader=train_loader,
         optimizer=optimizer,
-        scheduler=scheduler,
+        scheduler=scheduler,  # type: ignore[arg-type]
         device=device,
         num_steps=args.num_steps,
         log_every=args.log_every,

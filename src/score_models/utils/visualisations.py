@@ -71,7 +71,8 @@ def plot_gradient_field(
     x_range: Tuple[int, int] = (-10, 10),
     y_range: Tuple[int, int] = (-10, 10),
     datapoints: Optional[Tensor] = None,
-) -> None:
+    ax: Optional[plt.Axes] = None,
+) -> plt.Axes:
     """Plot the gradient field of the score model.
 
     :param score_model: Score model
@@ -80,7 +81,9 @@ def plot_gradient_field(
     :param y_range: Y range
     :param datapoints: Data points
     """
-    _, ax = plt.subplots()
+    if ax is None:
+        _, ax = plt.subplots()
+
     _plot_gradient_field(
         tensor_func=_tensor_func, score_model=score_model, i=i, x_range=x_range, y_range=y_range, ax=ax, spacing=0.7
     )
@@ -91,8 +94,8 @@ def plot_gradient_field(
         ax.scatter(datapoints_np[:, 0], datapoints_np[:, 1], color="red", label="datapoints", s=4)
         ax.legend()
 
-    plt.title("Gradient Field")
-    plt.show()
+    ax.set_title("Gradient Field")
+    return ax
 
 
 def show_torch_images(imgs: Union[torch.Tensor, List[torch.Tensor]]) -> None:

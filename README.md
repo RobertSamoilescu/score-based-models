@@ -35,10 +35,8 @@ You can visualise the CIFAR-10 samples in `notebooks/ncsn_cifa-10.ipynb`.
 #### NCSN
 
 * 2D Gaussian mixture
-<div style="display: flex;">
-  <img src="imgs/ncsn-gradient-field.png" alt="Gradient field" style="width: 30%;">
-  <img src="imgs/ncsn-2D-sample.png" alt="Samples" style="width: 30%;">
-</div>
+
+<img src="imgs/ncsn-2D-gaussian.png" alt="Gradient field" style="width: 90%;">
 
 * CIFAR-10
 
