@@ -20,7 +20,4 @@ class DenoisingScoreMatching(nn.Module):
         eps = eps.view(eps.size(0), -1)
         score = score.view(score.size(0), -1)
         sigmas = sigmas.view(sigmas.size(0), -1)
-        return torch.mean(
-            torch.sum((sigmas * score + eps / sigmas) ** 2, dim=-1),
-            dim=0
-        )
+        return torch.mean(torch.sum((sigmas * score + eps / sigmas) ** 2, dim=-1), dim=0)

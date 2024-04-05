@@ -4,10 +4,12 @@ https://github.com/zoubohao/DenoisingDiffusionProbabilityModel-ddpm-/blob/main/D
 """
 
 import math
+from typing import List
+
 import torch
 from torch import nn
-from torch.nn import init
 from torch.nn import functional as F
+from torch.nn import init
 
 
 class Swish(nn.Module):
@@ -208,12 +210,12 @@ class ResBlock(nn.Module):
         if in_ch != out_ch:
             self.shortcut = nn.Conv2d(in_ch, out_ch, 1, stride=1, padding=0)
         else:
-            self.shortcut = nn.Identity()
+            self.shortcut = nn.Identity()  # type: ignore[assignment]
 
         if attn:
             self.attn = AttnBlock(out_ch)
         else:
-            self.attn = nn.Identity()
+            self.attn = nn.Identity()  # type: ignore[assignment]
 
         self.initialize()
 
@@ -244,7 +246,7 @@ class UNet(nn.Module):
     """UNet model."""
 
     def __init__(
-        self, T: int, in_ch: int, ch: int, ch_mult: List[int], attn: bool, num_res_blocks: int, dropout: bool
+        self, T: int, in_ch: int, ch: int, ch_mult: List[int], attn: List[int], num_res_blocks: int, dropout: bool
     ) -> None:
         """Constructor of the UNet model.
 
@@ -252,7 +254,7 @@ class UNet(nn.Module):
         :param in_ch: Number of input channels
         :param ch: Number of channels
         :param ch_mult: Multiplier for the number of channels
-        :param attn: Whether to use attention
+        :param attn: List of indices of the layers where attention is used
         :param num_res_blocks: Number of residual blocks
         :param dropout: Dropout rate
         """

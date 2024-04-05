@@ -1,11 +1,11 @@
 import os
+from typing import Optional
 
 import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
-from tqdm import tqdm
-from typing import Optional
+from tqdm import tqdm  # type: ignore[import-untyped]
 
 from score_models.train_steps import TrainStep
 
@@ -16,7 +16,6 @@ def save_checkpoint(
     model: nn.Module,
     optimizer: optim.Optimizer,
     scheduler: Optional[optim.lr_scheduler._LRScheduler] = None,
-
 ):
     path = f"{checkpoint_dir}/{step}.pt"
     if not os.path.exists(checkpoint_dir):
@@ -29,7 +28,7 @@ def save_checkpoint(
     }
 
     if scheduler is not None:
-        ckpt["scheduler_state_dict"] = scheduler.state_dict(),
+        ckpt["scheduler_state_dict"] = (scheduler.state_dict(),)
 
     torch.save(ckpt, path)
 

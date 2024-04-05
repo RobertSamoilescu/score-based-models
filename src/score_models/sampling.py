@@ -31,7 +31,7 @@ def annealed_langevin_dynamics(
 
     for i in range(L):
         alpha_i = eps * (sigmas[i] / sigmas[L - 1]) ** 2
-        indices = i * torch.ones((input_size[0], ), dtype=torch.long).cuda()
+        indices = i * torch.ones((input_size[0],), dtype=torch.long).cuda()
 
         for _ in range(T):
             z_t = torch.randn(input_size).cuda()
