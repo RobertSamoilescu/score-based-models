@@ -33,6 +33,13 @@ def save_checkpoint(
     torch.save(ckpt, path)
 
 
+def compute_running_loss(running_loss: Optional[float], loss: float):
+    if running_loss is None:
+        return loss
+
+    return 0.9 * running_loss + 0.1 * loss
+
+
 def trainer(
     train_step: TrainStep,
     model: nn.Module,
@@ -58,6 +65,7 @@ def trainer(
     """
     model.train()
     generator = iter(train_loader)
+    running_loss = None
 
     for step in tqdm(range(1, num_steps + 1)):
         try:
@@ -79,9 +87,12 @@ def trainer(
         if scheduler is not None:
             scheduler.step()
 
+        # update the running loss
+        running_loss = compute_running_loss(running_loss, loss.item())
+
         # log the loss
         if step % log_every == 0:
-            print(f"Step {step}, Loss: {loss.item():.4f}")
+            print(f"Step {step}, Loss: {running_loss:.4f}")
 
         # save the model
         if step % save_every == 0:
