@@ -2,7 +2,7 @@ import argparse
 
 import torch
 import torch.optim as optim
-import torchvision
+from datasets import load_dataset
 from score_models.models.unet import UNet
 from score_models.train_steps.ddpm_train_step import TrainStepDDPM
 from score_models.trainer import trainer
@@ -15,24 +15,29 @@ from torchvision import transforms
 
 def get_dataloader(batch_size: int, shuffle: bool = True) -> DataLoader:
     # Define transformations to be applied to the data
-    transform = transforms.Compose(
+    preprocess = transforms.Compose(
         [
-            transforms.Resize((32, 32)),
-            transforms.ToTensor(),  # Convert PIL image or numpy array to tensor
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),  # Normalize the image between -1 and 1
+            transforms.Resize((128, 128)),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize([0.5], [0.5]),
         ]
     )
 
-    # Download and load the CIFAR10 training dataset
-    train_dataset = torchvision.datasets.CIFAR10(root="./data", train=True, transform=transform, download=True)
+    # Download and load the butterflies training dataset
+    train_dataset = load_dataset("huggan/smithsonian_butterflies_subset", split="train")
 
-    # Create a DataLoader for the CIFAR10 training dataset
-    images = [image for image, _ in train_dataset]
-    return DataLoader(dataset=images, batch_size=batch_size, shuffle=shuffle, num_workers=4)  # type: ignore[arg-type]
+    def transform(examples):
+        images = [preprocess(image.convert("RGB")) for image in examples["image"]]
+        return {"images": images}
+
+    # Create a DataLoader for the butterflies training dataset
+    train_dataset.set_transform(transform)
+    return DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=4)  # type: ignore[arg-type]
 
 
 def train(args: argparse.Namespace) -> None:
-    """Train Noise Conditional Score Networks on CIFAR10 dataset.
+    """Train Noise Conditional Score Networks on butteflies dataset.
 
     :param args: Arguments
     """
@@ -48,6 +53,7 @@ def train(args: argparse.Namespace) -> None:
         num_res_blocks=args.num_res_blocks,
         dropout=args.dropout,
     ).to(device)
+    score_model = torch.compile(score_model)  # type: ignore[assignment]
 
     # load dataset
     train_loader = get_dataloader(batch_size=args.batch_size)
@@ -82,20 +88,24 @@ def train(args: argparse.Namespace) -> None:
         log_every=args.log_every,
         save_every=args.save_every,
         checkpoint_dir=args.checkpoint_dir,
+        batch_preprocessor=lambda x: x["images"],
     )
 
 
 def main():
     parser = argparse.ArgumentParser(description="Train Noise Conditional Score Networks on CIFAR10")
     # training arguments
-    parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training")
+    parser.add_argument("--batch_size", type=int, default=16, help="Batch size for training")
     parser.add_argument("--num_steps", type=int, default=400_000, help="Number of training steps")
     parser.add_argument("--log_every", type=int, default=100, help="Log training statistics every n steps")
     parser.add_argument("--save_every", type=int, default=20_000, help="Save model checkpoint every n steps")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate for optimizer")
     parser.add_argument("--weight_decay", type=float, default=1e-4, help="Weight decay for optimizer")
     parser.add_argument(
-        "--checkpoint_dir", type=str, default="checkpoints/ddpm_cifar10/", help="Directory to save model checkpoints"
+        "--checkpoint_dir",
+        type=str,
+        default="checkpoints/ddpm_butterflies/",
+        help="Directory to save model checkpoints",
     )
     # noise arguments
     parser.add_argument("--T", type=int, default=1000, help="Number of diffusion steps")

@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Callable, Optional
 
 import torch
 import torch.nn as nn
@@ -51,6 +51,7 @@ def trainer(
     log_every: int = 100,
     save_every: int = 1000,
     checkpoint_dir: str = "checkpoints",
+    batch_preprocessor: Optional[Callable] = None,
 ) -> nn.Module:
     """Trains the model using the train_step function.
 
@@ -73,6 +74,9 @@ def trainer(
         except StopIteration:
             generator = iter(train_loader)
             x = next(generator)
+
+        if batch_preprocessor is not None:
+            x = batch_preprocessor(x)
 
         # compute the loss
         loss = train_step(x.to(device))
