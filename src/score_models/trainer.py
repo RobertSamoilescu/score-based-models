@@ -91,7 +91,7 @@ def trainer(
         running_loss = compute_running_loss(running_loss, loss.item())
 
         # log the loss
-        if step % log_every == 0:
+        if step % log_every == 0 or step == 1:
             print(f"Step {step}, Loss: {running_loss:.4f}")
 
         # save the model

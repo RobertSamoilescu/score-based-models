@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Dict
 
 import numpy as np
 
@@ -16,15 +16,23 @@ def get_sigmas(L: int, sigma_min: float, sigma_max: float) -> List[float]:
     return [sigma_min * r**i for i in range(L)][::-1]
 
 
-def get_alphas_bar(beta_min: float = 1e-4, beta_max: float = 2e-2, T: int = 1_000) -> np.ndarray:
-    """Returns a list of alphas_bar values for a given range of betas.
+def get_betas(beta_min: float = 1e-4, beta_max: float = 2e-2, T: int = 1_000) -> Dict[str, List[float]]:
+    """Returns a dictionary of betas, alphas, alphas_bar and sigmas.
     Used for DDPM.
 
     :param beta_min: Minimum beta
     :param beta_max: Maximum beta
     :param T: Number of alphas
-    :return: Array of alphas_bar values
+    :return: Dictionary of betas, alphas, alphas_bar and sigmas
     """
     betas = np.linspace(beta_min, beta_max, T)
     alphas = 1 - betas
-    return np.cumprod(alphas)
+    alphas_bar = np.cumprod(alphas)
+    sigmas = np.sqrt(betas)
+    
+    return {
+        "betas": betas.tolist(),
+        "alphas": alphas.tolist(),
+        "alphas_bar": alphas_bar.tolist(),
+        "sigmas": sigmas.tolist(),
+    }

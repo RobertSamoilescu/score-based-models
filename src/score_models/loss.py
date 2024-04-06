@@ -21,3 +21,14 @@ class DenoisingScoreMatching(nn.Module):
         score = score.view(score.size(0), -1)
         sigmas = sigmas.view(sigmas.size(0), -1)
         return torch.mean(torch.sum((sigmas * score + eps / sigmas) ** 2, dim=-1), dim=0)
+
+
+class DenoiseLoss(nn.Module):
+    def __init__(self):
+        super(DenoiseLoss, self).__init__()
+
+    def forward(self, eps_pred: torch.Tensor, eps: torch.Tensor) -> torch.Tensor:
+        eps_pred = eps_pred.view(eps_pred.size(0), -1)
+        eps = eps.view(eps.size(0), -1)
+        return torch.mean(torch.sum((eps_pred - eps)**2, dim=-1), dim=0)
+
