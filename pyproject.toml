@@ -19,7 +19,6 @@ classifiers = [
 dependencies = [
     "torch==2.0.0",
     "torchvision",
-    "pytorch-ignite",
     "numpy",
     "matplotlib",
     "tqdm",

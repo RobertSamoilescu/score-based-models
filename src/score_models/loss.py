@@ -30,5 +30,4 @@ class DenoiseLoss(nn.Module):
     def forward(self, eps_pred: torch.Tensor, eps: torch.Tensor) -> torch.Tensor:
         eps_pred = eps_pred.view(eps_pred.size(0), -1)
         eps = eps.view(eps.size(0), -1)
-        return torch.mean(torch.sum((eps_pred - eps)**2, dim=-1), dim=0)
-
+        return torch.mean(torch.sum((eps_pred - eps) ** 2, dim=-1), dim=0)

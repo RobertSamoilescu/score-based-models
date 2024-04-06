@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List
 
 import numpy as np
 import torch
@@ -37,18 +37,17 @@ def annealed_langevin_dynamics(
     return x
 
 
-
 @torch.no_grad()
 def ddpm_sampling(
     x: torch.Tensor,
     score_model: nn.Module,
-    alphas: List[float], 
-    alphas_bar: List[float], 
+    alphas: List[float],
+    alphas_bar: List[float],
     sigmas: List[float],
-    T: int = 1_000
+    T: int = 1_000,
 ) -> torch.Tensor:
-    """DDPM sampling.   
-    
+    """DDPM sampling.
+
     :param x: Input tensor
     :param score_model: Score model
     :param alphas: List of alphas

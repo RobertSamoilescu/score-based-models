@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import Dict, List
 
 import numpy as np
 
@@ -29,7 +29,7 @@ def get_betas(beta_min: float = 1e-4, beta_max: float = 2e-2, T: int = 1_000) ->
     alphas = 1 - betas
     alphas_bar = np.cumprod(alphas)
     sigmas = np.sqrt(betas)
-    
+
     return {
         "betas": betas.tolist(),
         "alphas": alphas.tolist(),

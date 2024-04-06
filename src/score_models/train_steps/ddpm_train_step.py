@@ -1,11 +1,11 @@
+from typing import List
+
 import torch
 import torch.nn as nn
 from torch import Tensor
-from typing import List
 
 from score_models.loss import DenoiseLoss
 from score_models.train_steps.base_train_step import TrainStep
-
 
 
 class TrainStepDDPM(TrainStep):
