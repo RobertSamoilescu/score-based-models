@@ -4,7 +4,7 @@ import torch
 import torch.optim as optim
 import torchvision
 from score_models.models.unet import UNet
-from score_models.train_steps import TrainStepNCSN
+from score_models.train_steps.ncsn_train_steps import TrainStepNCSN
 from score_models.trainer import trainer
 from score_models.utils.noise import get_sigmas
 from torch.utils.data import DataLoader

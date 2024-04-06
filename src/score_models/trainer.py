@@ -7,7 +7,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm  # type: ignore[import-untyped]
 
-from score_models.train_steps import TrainStep
+from score_models.train_steps.ncsn_train_steps import TrainStep
 
 
 def save_checkpoint(

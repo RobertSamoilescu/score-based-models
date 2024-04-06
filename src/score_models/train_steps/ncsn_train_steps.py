@@ -1,4 +1,3 @@
-import abc
 from typing import List
 
 import torch
@@ -6,14 +5,7 @@ import torch.nn as nn
 from torch import Tensor
 
 from score_models.loss import DenoisingScoreMatching
-
-
-class TrainStep:
-    """Abstract class for the Train Step."""
-
-    @abc.abstractmethod
-    def __call__(self, x: Tensor) -> Tensor:
-        pass
+from score_models.train_steps.base_train_step import TrainStep
 
 
 class TrainStepNCSN(TrainStep):
