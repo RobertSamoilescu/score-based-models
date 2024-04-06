@@ -89,9 +89,9 @@ def main():
     parser = argparse.ArgumentParser(description="Train Noise Conditional Score Networks on CIFAR10")
     # training arguments
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training")
-    parser.add_argument("--num_steps", type=int, default=800_000, help="Number of training steps")
+    parser.add_argument("--num_steps", type=int, default=400_000, help="Number of training steps")
     parser.add_argument("--log_every", type=int, default=100, help="Log training statistics every n steps")
-    parser.add_argument("--save_every", type=int, default=50_000, help="Save model checkpoint every n steps")
+    parser.add_argument("--save_every", type=int, default=25_000, help="Save model checkpoint every n steps")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate for optimizer")
     parser.add_argument("--weight_decay", type=float, default=1e-4, help="Weight decay for optimizer")
     parser.add_argument(

@@ -92,7 +92,7 @@ def trainer(
 
         # log the loss
         if step % log_every == 0 or step == 1:
-            print(f"Step {step}, Loss: {running_loss:.4f}")
+            print(f"Step {step}, Loss: {running_loss:.4f}. LR: {optimizer.param_groups[0]['lr'] * 1e4:.4f}e-4")
 
         # save the model
         if step % save_every == 0:
