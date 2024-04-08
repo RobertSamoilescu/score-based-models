@@ -3,6 +3,7 @@ from typing import List
 import numpy as np
 import torch
 import torch.nn as nn
+from tqdm import tqdm
 
 
 @torch.no_grad()
@@ -45,6 +46,7 @@ def ddpm_sampling(
     alphas_bar: List[float],
     sigmas: List[float],
     T: int = 1_000,
+    verbose: bool = True,
 ) -> torch.Tensor:
     """DDPM sampling.
 
@@ -57,7 +59,11 @@ def ddpm_sampling(
     """
     score_model.eval()
 
-    for t in range(T - 1, -1, -1):
+    iterator = range(T - 1, -1, -1)
+    if verbose:
+        iterator = tqdm(iterator)
+
+    for t in iterator:
         z = torch.randn_like(x) if t > 0 else torch.zeros_like(x)
         ts = t * torch.ones(x.shape[0], device=x.device, dtype=torch.long)
         x = (x - (1 - alphas[t]) / np.sqrt(1 - alphas_bar[t]) * score_model(x, ts)) / np.sqrt(alphas[t]) + sigmas[t] * z
