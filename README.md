@@ -26,7 +26,7 @@ The supported methods are:
 
 ```shell
 cd scripts
-python ncsn_train_cifar10.py
+python ncsn_train_cifar10.py --dataset cifar10
 ```
 
 You can visualise the CIFAR-10 samples in `notebooks/ncsn_view.ipynb`.
@@ -41,6 +41,7 @@ You can visualise the CIFAR-10 samples in `notebooks/ncsn_view.ipynb`.
 cd scripts
 python ddpm_train_cifar10.py --dataset [dataset-name]
 ```
+where `[datase-name]` can be `cifar10 | butterflies`.
 
 You can visualise the CIFAR-10 and Butterflies samples in `notebooks/ddpp_view.ipynb`.
 

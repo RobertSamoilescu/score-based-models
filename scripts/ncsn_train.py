@@ -1,4 +1,5 @@
 import argparse
+from typing import Callable, Tuple
 
 import torch
 import torch.optim as optim
@@ -7,11 +8,13 @@ from score_models.models.unet import UNet
 from score_models.train_steps.ncsn_train_steps import TrainStepNCSN
 from score_models.trainer import trainer
 from score_models.utils.noise import get_sigmas
+from score_models.utils.warmup_scheduler import WarmUpScheduler
+from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
 
-def get_dataloader(batch_size: int, shuffle: bool = True) -> DataLoader:
+def _get_dataloader_cifar10(batch_size: int, shuffle: bool = True, num_workers: int = 0) -> Tuple[DataLoader, Callable]:
     # Define transformations to be applied to the data
     transform = transforms.Compose(
         [
@@ -24,8 +27,19 @@ def get_dataloader(batch_size: int, shuffle: bool = True) -> DataLoader:
     train_dataset = torchvision.datasets.CIFAR10(root="./data", train=True, transform=transform, download=True)
 
     # Create a DataLoader for the CIFAR10 training dataset
-    images = [image for image, _ in train_dataset]
-    return DataLoader(dataset=images, batch_size=batch_size, shuffle=shuffle)  # type: ignore[arg-type]
+    return (
+        DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers),  # type: ignore[arg-type]
+        lambda x: x[0],
+    )
+
+
+def get_dataloader(
+    dataset: str, batch_size: int, shuffle: bool = True, num_workers: int = 0
+) -> Tuple[DataLoader, Callable]:
+    if dataset == "cifar10":
+        return _get_dataloader_cifar10(batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
+    else:
+        raise ValueError(f"Dataset {dataset} not supported")
 
 
 def train(args: argparse.Namespace) -> None:
@@ -46,12 +60,27 @@ def train(args: argparse.Namespace) -> None:
         dropout=args.dropout,
     ).to(device)
 
+    # compile the model
+    score_model = torch.compile(score_model)
+
     # load dataset
-    train_loader = get_dataloader(batch_size=args.batch_size)
+    train_loader, batch_preprocessor = get_dataloader(
+        dataset=args.dataset, batch_size=args.batch_size, num_workers=args.num_workers
+    )
 
     # define optimizer
     optimizer = optim.AdamW(score_model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
-    scheduler = optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=args.num_steps)
+
+    # define scheduler
+    warmup_steps = 1000
+    scheduler = CosineAnnealingLR(optimizer, T_max=args.num_steps - warmup_steps)
+    warmup_scheduler = WarmUpScheduler(
+        optimizer=optimizer,
+        lr_scheduler=scheduler,
+        warmup_steps=warmup_steps,
+        warmup_start_lr=0.0,
+        warmup_mode="linear",
+    )
 
     # define train step (i.e., criterion)
     sigmas = get_sigmas(L=args.L, sigma_min=args.sigma_min, sigma_max=args.sigma_max)
@@ -63,17 +92,21 @@ def train(args: argparse.Namespace) -> None:
         model=score_model,
         train_loader=train_loader,
         optimizer=optimizer,
-        scheduler=scheduler,  # type: ignore[arg-type]
+        scheduler=warmup_scheduler,  # type: ignore[arg-type]
         device=device,
         num_steps=args.num_steps,
         log_every=args.log_every,
         save_every=args.save_every,
         checkpoint_dir=args.checkpoint_dir,
+        batch_preprocessor=batch_preprocessor,
     )
 
 
 def main():
     parser = argparse.ArgumentParser(description="Train Noise Conditional Score Networks on CIFAR10")
+    # dataset arguments
+    parser.add_argument("--dataset", type=str, default="cifar10", choices=["cifar10"], help="Dataset to train on")
+    parser.add_argument("--num_workers", type=int, default=0, help="Number of workers for DataLoader")
     # training arguments
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training")
     parser.add_argument("--num_steps", type=int, default=200_000, help="Number of training steps")
