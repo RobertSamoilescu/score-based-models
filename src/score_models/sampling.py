@@ -13,6 +13,7 @@ def annealed_langevin_dynamics(
     sigmas: List[float],
     eps: float = 0.1,
     T: int = 100,
+    verbose: bool = True,
 ) -> torch.Tensor:
     """Annealed Langevin Dynamics sampling.
 
@@ -22,18 +23,24 @@ def annealed_langevin_dynamics(
     :param eps: Step size
     :param T: Number of steps
     :param r: Range of the input
+    :param verbose: Whether to show progress bar
     :return: Sampled tensor
     """
     score_model.eval()
     L = len(sigmas)
 
-    for i in range(L):
-        alpha_i = eps * (sigmas[i] / sigmas[L - 1]) ** 2
-        indices = i * torch.ones((x.shape[0],), dtype=torch.long).cuda()
+    iterator = range(T * L)
+    if verbose:
+        iterator = tqdm(iterator)
 
-        for _ in range(T):
-            z_t = torch.randn_like(x)
-            x = x + 0.5 * alpha_i * score_model(x, indices) + np.sqrt(alpha_i) * z_t
+    for j in iterator:
+        if j % T == 0:
+            i = j // T
+            alpha_i = eps * (sigmas[i] / sigmas[L - 1]) ** 2
+            indices = i * torch.ones((x.shape[0],), dtype=torch.long).cuda()
+
+        z_t = torch.randn_like(x)
+        x = x + 0.5 * alpha_i * score_model(x, indices) + np.sqrt(alpha_i) * z_t
 
     return x
 
@@ -56,6 +63,8 @@ def ddpm_sampling(
     :param alphas_bar: List of alphas_bar
     :param sigmas: List of sigmas
     :param T: Number of steps
+    :param verbose: Whether to show progress bar
+    :return: Sampled tensor
     """
     score_model.eval()
 
