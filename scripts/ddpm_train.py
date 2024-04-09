@@ -93,7 +93,7 @@ def train(args: argparse.Namespace) -> None:
     ).to(device)
 
     # compile the model
-    score_model = torch.compile(score_model)
+    score_model = torch.compile(score_model)  # type: ignore[assignment]
 
     # load dataset
     train_loader, batch_preprocessor = get_dataloader(

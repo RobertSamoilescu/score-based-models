@@ -1,9 +1,11 @@
 from typing import Callable, List, Optional, Tuple, Union
 
+import imageio
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn as nn
+import torchvision
 import torchvision.transforms.functional as F
 from torch import Tensor
 
@@ -112,3 +114,26 @@ def show_torch_images(imgs: Union[torch.Tensor, List[torch.Tensor]]) -> None:
         img = F.to_pil_image(img)
         axs[0, i].imshow(np.asarray(img))
         axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
+
+
+def tensors_to_gif(
+    tensor_list: List[torch.Tensor], filename: str, duration=2.0, value_range: Tuple[int, int] = (-1, 1)
+) -> None:
+    """Save a list of tensors as a GIF file.
+
+    :param tensor_list: List of tensors
+    :param filename: Name of the GIF file
+    :param duration: Duration of each frame in seconds
+    """
+    images = []
+
+    for tensor in tensor_list:
+        tensor = torch.clamp(tensor, -1, 1)
+        image = torchvision.utils.make_grid(tensor, nrow=8, normalize=True, value_range=value_range)
+        image = image.permute(1, 2, 0).numpy()
+        # Ensure pixel values are in the range [0, 255] and of integer type
+        image = (image * 255).astype("uint8")
+        images.append(image)
+
+    # Write images to GIF using imageio
+    imageio.mimsave(filename, images, format="GIF", duration=duration, loop=0)  # type: ignore[call-overload]

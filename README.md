@@ -1,5 +1,7 @@
 # Score based models
 
+<img src="imgs/ddpm-sampling.gif" alt="diffusion gif" width="768" />
+
 This repo contains some naive implementations of various score-based generative models.
 
 ## Installation

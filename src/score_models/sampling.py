@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import torch
@@ -13,6 +13,7 @@ def annealed_langevin_dynamics(
     sigmas: List[float],
     eps: float = 0.1,
     T: int = 100,
+    history_buffer: Optional[List[torch.Tensor]] = None,
     verbose: bool = True,
 ) -> torch.Tensor:
     """Annealed Langevin Dynamics sampling.
@@ -23,6 +24,7 @@ def annealed_langevin_dynamics(
     :param eps: Step size
     :param T: Number of steps
     :param r: Range of the input
+    :param history_buffer: History buffer
     :param verbose: Whether to show progress bar
     :return: Sampled tensor
     """
@@ -33,6 +35,9 @@ def annealed_langevin_dynamics(
     if verbose:
         iterator = tqdm(iterator)
 
+    if history_buffer is not None:
+        history_buffer.append(x.cpu())
+
     for j in iterator:
         if j % T == 0:
             i = j // T
@@ -41,6 +46,9 @@ def annealed_langevin_dynamics(
 
         z_t = torch.randn_like(x)
         x = x + 0.5 * alpha_i * score_model(x, indices) + np.sqrt(alpha_i) * z_t
+
+        if history_buffer is not None:
+            history_buffer.append(x.cpu())
 
     return x
 
@@ -53,6 +61,7 @@ def ddpm_sampling(
     alphas_bar: List[float],
     sigmas: List[float],
     T: int = 1_000,
+    history_buffer: Optional[List[torch.Tensor]] = None,
     verbose: bool = True,
 ) -> torch.Tensor:
     """DDPM sampling.
@@ -63,6 +72,7 @@ def ddpm_sampling(
     :param alphas_bar: List of alphas_bar
     :param sigmas: List of sigmas
     :param T: Number of steps
+    :param history_buffer: History buffer
     :param verbose: Whether to show progress bar
     :return: Sampled tensor
     """
@@ -72,9 +82,15 @@ def ddpm_sampling(
     if verbose:
         iterator = tqdm(iterator)
 
+    if history_buffer is not None:
+        history_buffer.append(x.cpu())
+
     for t in iterator:
         z = torch.randn_like(x) if t > 0 else torch.zeros_like(x)
         ts = t * torch.ones(x.shape[0], device=x.device, dtype=torch.long)
         x = (x - (1 - alphas[t]) / np.sqrt(1 - alphas_bar[t]) * score_model(x, ts)) / np.sqrt(alphas[t]) + sigmas[t] * z
+
+        if history_buffer is not None:
+            history_buffer.append(x.cpu())
 
     return x
