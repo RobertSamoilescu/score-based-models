@@ -3,43 +3,50 @@ from typing import Callable, Tuple
 
 import torch
 import torch.optim as optim
-import torchvision
-from score_models.models.unet.unet import UNet
-from score_models.train_steps.ncsn_train_steps import TrainStepNCSN
+from datasets import load_dataset
+from score_models.models.unet.unet import CondUNet
+from score_models.train_steps.ddpm_train_step import TrainStepDDPM
 from score_models.trainer import trainer
-from score_models.utils.noise import get_sigmas
+from score_models.utils.noise import get_betas
 from score_models.utils.warmup_scheduler import WarmUpScheduler
+from sentence_transformers import SentenceTransformer
 from torch.optim.lr_scheduler import CosineAnnealingLR
 from torch.utils.data import DataLoader
 from torchvision import transforms
 
 
-def _get_dataloader_cifar10(batch_size: int, shuffle: bool = True, num_workers: int = 0) -> Tuple[DataLoader, Callable]:
+def get_dataloader(
+    model_path: str, dataset: str, batch_size: int, shuffle: bool = True, num_workers: int = 0
+) -> Tuple[DataLoader, Callable]:
+    # load sentence encoder
+    model = SentenceTransformer(model_path)
+    model = model.cuda()
+
     # Define transformations to be applied to the data
-    transform = transforms.Compose(
+    preprocess = transforms.Compose(
         [
             transforms.Resize((32, 32)),
-            transforms.ToTensor(),  # Convert PIL image or numpy array to tensor
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            transforms.Normalize([0.5], [0.5]),
         ]
     )
 
-    # Download and load the CIFAR10 training dataset
-    train_dataset = torchvision.datasets.CIFAR10(root="./data", train=True, transform=transform, download=True)
+    # Download and load the butterflies training dataset
+    train_dataset = load_dataset(dataset, split="train")
 
-    # Create a DataLoader for the CIFAR10 training dataset
+    def transform(examples):
+        images = [preprocess(image.convert("RGB")) for image in examples["image"]]
+        texts = model.encode(examples["text"])
+        texts = texts.reshape(len(texts), 1, -1)
+        return {"images": images, "texts": texts}
+
+    # Create a DataLoader for the butterflies training dataset
+    train_dataset.set_transform(transform)
     return (
         DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers),  # type: ignore[arg-type]
-        lambda x: (x[0].cuda(),),
+        lambda x: (x["images"].cuda(), x["texts"].cuda()),
     )
-
-
-def get_dataloader(
-    dataset: str, batch_size: int, shuffle: bool = True, num_workers: int = 0
-) -> Tuple[DataLoader, Callable]:
-    if dataset == "cifar10":
-        return _get_dataloader_cifar10(batch_size=batch_size, shuffle=shuffle, num_workers=num_workers)
-    else:
-        raise ValueError(f"Dataset {dataset} not supported")
 
 
 def train(args: argparse.Namespace) -> None:
@@ -50,11 +57,12 @@ def train(args: argparse.Namespace) -> None:
 
     # define score model
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    score_model = UNet(
-        T=args.L,
+    score_model = CondUNet(
+        T=args.T,
         in_ch=args.in_ch,
         ch=args.ch,
         ch_mult=args.ch_mult,
+        cond_ch=args.cond_ch,
         attn=args.attn,
         num_res_blocks=args.num_res_blocks,
         dropout=args.dropout,
@@ -65,7 +73,7 @@ def train(args: argparse.Namespace) -> None:
 
     # load dataset
     train_loader, batch_preprocessor = get_dataloader(
-        dataset=args.dataset, batch_size=args.batch_size, num_workers=args.num_workers
+        model_path=args.encoder_path, dataset=args.dataset, batch_size=args.batch_size, num_workers=args.num_workers
     )
 
     # define optimizer
@@ -83,8 +91,8 @@ def train(args: argparse.Namespace) -> None:
     )
 
     # define train step (i.e., criterion)
-    sigmas = get_sigmas(L=args.L, sigma_min=args.sigma_min, sigma_max=args.sigma_max)
-    train_step = TrainStepNCSN(score_model=score_model, sigmas=sigmas)
+    betas = get_betas(beta_min=args.beta_min, beta_max=args.beta_max, T=args.T)
+    train_step = TrainStepDDPM(score_model=score_model, alphas_bar=betas["alphas_bar"])
 
     # run training loop
     score_model = trainer(  # type: ignore[assignment]
@@ -104,22 +112,24 @@ def train(args: argparse.Namespace) -> None:
 def main():
     parser = argparse.ArgumentParser(description="Train Noise Conditional Score Networks on CIFAR10")
     # dataset arguments
-    parser.add_argument("--dataset", type=str, default="cifar10", choices=["cifar10"], help="Dataset to train on")
-    parser.add_argument("--num_workers", type=int, default=0, help="Number of workers for DataLoader")
+    parser.add_argument("--encoder_path", type=str, default="all-mpnet-base-v2", help="Path to the sentence encoder")
+    parser.add_argument("--cond_ch", type=int, default=768, help="Number of channels in the conditional model")
+    parser.add_argument("--dataset", type=str, default="m1guelpf/nouns", help="Dataset to train on")
+    parser.add_argument("--num_workers", type=int, default=0, help="Number of workers for data loader")
     # training arguments
-    parser.add_argument("--batch_size", type=int, default=128, help="Batch size for training")
+    parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training")
     parser.add_argument("--num_steps", type=int, default=200_000, help="Number of training steps")
     parser.add_argument("--log_every", type=int, default=100, help="Log training statistics every n steps")
-    parser.add_argument("--save_every", type=int, default=10_000, help="Save model checkpoint every n steps")
+    parser.add_argument("--save_every", type=int, default=25_000, help="Save model checkpoint every n steps")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning rate for optimizer")
     parser.add_argument("--weight_decay", type=float, default=1e-4, help="Weight decay for optimizer")
     parser.add_argument(
-        "--checkpoint_dir", type=str, default="checkpoints/ncsn_cifar10/", help="Directory to save model checkpoints"
+        "--checkpoint_dir", type=str, default="checkpoints/ddpm_nouns/", help="Directory to save model checkpoints"
     )
     # noise arguments
-    parser.add_argument("--L", type=int, default=10, help="Number of noise scales")
-    parser.add_argument("--sigma_min", type=float, default=0.01, help="Minimum sigma for noise")
-    parser.add_argument("--sigma_max", type=float, default=1.0, help="Maximum sigma for noise")
+    parser.add_argument("--T", type=int, default=1000, help="Number of diffusion steps")
+    parser.add_argument("--beta_min", type=float, default=1e-4, help="Minimum beta for noise")
+    parser.add_argument("--beta_max", type=float, default=2e-2, help="Maximum beta for noise")
     # model arguments
     parser.add_argument("--in_ch", type=int, default=3, help="Number of input channels")
     parser.add_argument("--ch", type=int, default=128, help="Number of channels in the model")

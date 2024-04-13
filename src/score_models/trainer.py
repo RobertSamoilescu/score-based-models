@@ -47,7 +47,6 @@ def trainer(
     optimizer: optim.Optimizer,
     scheduler: Optional[optim.lr_scheduler._LRScheduler] = None,
     num_steps: int = 100,
-    device: str = "cuda",
     log_every: int = 100,
     save_every: int = 1000,
     checkpoint_dir: str = "checkpoints",
@@ -60,9 +59,11 @@ def trainer(
     :param train_loader: DataLoader for the training data
     :param optimizer: Optimizer
     :param scheduler: Scheduler
-    :param criterion: Loss function
-    :param num_epochs: Number of epochs
-    :param device: Device to use
+    :param num_steps: Number of steps
+    :param log_every: Log statistics every n steps
+    :param save_every: Save model checkpoint every n steps
+    :param checkpoint_dir: Directory to save model checkpoints
+    :param batch_preprocessor: Preprocessor for the batch
     """
     model.train()
     generator = iter(train_loader)
@@ -79,7 +80,7 @@ def trainer(
             x = batch_preprocessor(x)
 
         # compute the loss
-        loss = train_step(x.to(device))
+        loss = train_step(*x)
 
         # backward and optimize
         optimizer.zero_grad()

@@ -17,6 +17,7 @@ pip install -e .
 The supported methods are:
 * Noise Conditional Score Networks (NCSN) ([Song and Ermon, 2019](https://arxiv.org/abs/1907.05600))
 * Denoising Diffusion Probabilistic Models (DDPM) ([Ho et al., 2020](https://arxiv.org/abs/2006.11239))
+* Conditional DDPM - Cross-Attention (CDDPM) ([Rombach et al., 2021](https://arxiv.org/abs/2112.10752))
 
 
 ## Run
@@ -37,15 +38,26 @@ You can visualise the CIFAR-10 samples in `notebooks/ncsn_view.ipynb`.
 ### DDPM
 * 2D gaussian example: `notebooks/ddpm_2d_example.ipynb`
 
-* CIFAR-10, Butterfiles: 
+* CIFAR-10, [Butterfiles](https://huggingface.co/datasets/huggan/smithsonian_butterflies_subset): 
 
 ```shell
 cd scripts
-python ddpm_train_cifar10.py --dataset [dataset-name]
+python ddpm_train.py --dataset [dataset-name]
 ```
 where `[datase-name]` can be `cifar10 | butterflies`.
 
 You can visualise the CIFAR-10 and Butterflies samples in `notebooks/ddpp_view.ipynb`.
+
+
+### CDDPM
+
+* [Nouns](https://huggingface.co/datasets/m1guelpf/nouns): 
+
+```shell
+cd scripts
+python ddpm_cond_train.py --dataset m1guelpf/nouns
+```
+You can visualise the Nouns samples in `notebooks/ddpp_cond_view.ipynb`.
 
 
 ## Results
@@ -71,3 +83,9 @@ You can visualise the CIFAR-10 and Butterflies samples in `notebooks/ddpp_view.i
 
 <img src="imgs/ddpm-butterflies.png" alt="Butterflies" style="width: 50%;">
 
+
+### CDDPM
+
+* Nouns (32 x 32)
+
+<img src="imgs/cddpm-nouns.png" alt="Nouns" style="width: 50%;">

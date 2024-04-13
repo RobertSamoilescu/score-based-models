@@ -61,6 +61,7 @@ def ddpm_sampling(
     alphas_bar: List[float],
     sigmas: List[float],
     T: int = 1_000,
+    y: Optional[torch.Tensor] = None,
     history_buffer: Optional[List[torch.Tensor]] = None,
     verbose: bool = True,
 ) -> torch.Tensor:
@@ -72,6 +73,7 @@ def ddpm_sampling(
     :param alphas_bar: List of alphas_bar
     :param sigmas: List of sigmas
     :param T: Number of steps
+    :param y: Conditional tensor
     :param history_buffer: History buffer
     :param verbose: Whether to show progress bar
     :return: Sampled tensor
@@ -88,7 +90,9 @@ def ddpm_sampling(
     for t in iterator:
         z = torch.randn_like(x) if t > 0 else torch.zeros_like(x)
         ts = t * torch.ones(x.shape[0], device=x.device, dtype=torch.long)
-        x = (x - (1 - alphas[t]) / np.sqrt(1 - alphas_bar[t]) * score_model(x, ts)) / np.sqrt(alphas[t]) + sigmas[t] * z
+
+        score = score_model(x, y, ts) if y is not None else score_model(x, ts)
+        x = (x - (1 - alphas[t]) / np.sqrt(1 - alphas_bar[t]) * score) / np.sqrt(alphas[t]) + sigmas[t] * z
 
         if history_buffer is not None:
             history_buffer.append(x.cpu())
