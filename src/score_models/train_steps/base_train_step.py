@@ -7,5 +7,5 @@ class TrainStep:
     """Abstract class for the Train Step."""
 
     @abc.abstractmethod
-    def __call__(self, x: Tensor) -> Tensor:
+    def __call__(self, x: Tensor, *args, **kwargs) -> Tensor:
         pass

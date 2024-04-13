@@ -5,7 +5,7 @@ import torch
 import torch.optim as optim
 import torchvision
 from datasets import load_dataset
-from score_models.models.unet import UNet
+from score_models.models.unet.unet import UNet
 from score_models.train_steps.ddpm_train_step import TrainStepDDPM
 from score_models.trainer import trainer
 from score_models.utils.noise import get_betas
@@ -39,7 +39,7 @@ def _get_dataloader_butterflies(
     train_dataset.set_transform(transform)
     return (
         DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers),  # type: ignore[arg-type]
-        lambda x: x["images"],
+        lambda x: (x["images"].cuda(),),
     )
 
 
@@ -59,7 +59,7 @@ def _get_dataloader_cifar10(batch_size: int, shuffle: bool = True, num_workers: 
     # Create a DataLoader for the CIFAR10 training dataset
     return (
         DataLoader(dataset=train_dataset, batch_size=batch_size, shuffle=shuffle, num_workers=num_workers),  # type: ignore[arg-type]
-        lambda x: x[0],
+        lambda x: (x[0].cuda(),),
     )
 
 
@@ -125,7 +125,6 @@ def train(args: argparse.Namespace) -> None:
         train_loader=train_loader,
         optimizer=optimizer,
         scheduler=warmup_scheduler,  # type: ignore[arg-type]
-        device=device,
         num_steps=args.num_steps,
         log_every=args.log_every,
         save_every=args.save_every,
