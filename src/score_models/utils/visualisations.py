@@ -1,3 +1,4 @@
+import textwrap
 from typing import Callable, List, Optional, Tuple, Union
 
 import imageio
@@ -100,7 +101,9 @@ def plot_gradient_field(
     return ax
 
 
-def show_torch_images(imgs: Union[torch.Tensor, List[torch.Tensor]]) -> None:
+def show_torch_images(
+    imgs: Union[torch.Tensor, List[torch.Tensor]], titles: Optional[List[str]] = None, width_factor: float = 10.0
+) -> None:
     """Display a list of images.
 
     :param imgs: list of images
@@ -108,12 +111,23 @@ def show_torch_images(imgs: Union[torch.Tensor, List[torch.Tensor]]) -> None:
     if not isinstance(imgs, list):
         imgs = [imgs]
 
-    _, axs = plt.subplots(ncols=len(imgs), squeeze=False)
+    nrows = 1 if titles is None else 2
+    fig, axs = plt.subplots(nrows=nrows, ncols=len(imgs), squeeze=False)
+
     for i, img in enumerate(imgs):
         img = img.detach()
         img = F.to_pil_image(img)
         axs[0, i].imshow(np.asarray(img))
         axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
+
+        if titles is not None:
+            wrapped_text = textwrap.fill(titles[i], width=int(fig.get_figwidth() * width_factor // len(imgs)))
+            axs[1, i].text(0.5, 0.5, wrapped_text, ha="center", va="center", fontsize=10)
+            axs[1, i].axis("off")
+            # axs[1, i].set_aspect('equal')
+
+    # Adjust spacing to remove padding between subplots
+    plt.subplots_adjust(wspace=0, hspace=0)
 
 
 def tensors_to_gif(
