@@ -84,8 +84,8 @@ You can visualise the Nouns samples in `notebooks/ddpp_cond_view.ipynb`.
 <img src="imgs/ddpm-butterflies.png" alt="Butterflies" style="width: 50%;">
 
 
-### DDPM
+### CDDPM
 
 * Nouns (32 x 32)
 
-<img src="imgs/ddpm-nouns.png" alt="Nouns" style="width: 50%;">
+<img src="imgs/cddpm-nouns.png" alt="Nouns" style="width: 50%;">
